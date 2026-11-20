@@ -47,9 +47,14 @@
   }
 
   /* ---------- cabecera ---------- */
-  const header = $('[data-header]');
-  const onScroll = () => header && header.classList.toggle('is-stuck', scrollY > 8);
-  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  const header = $('[data-header]'), heroEl = $('[data-hero]');
+  // sobre el vídeo de la portada la cabecera es transparente; al bajar vuelve a ser crema
+  const onScroll = () => {
+    if (!header) return;
+    header.classList.toggle('is-stuck', scrollY > 8);
+    header.classList.toggle('on-dark', !!heroEl && !header.classList.contains('menu-open') && scrollY < heroEl.offsetHeight - header.offsetHeight - 40);
+  };
+  addEventListener('scroll', onScroll, { passive: true }); addEventListener('resize', onScroll); onScroll();
   const mBtn = $('[data-menu-btn]'), mMenu = $('[data-mobile-menu]');
   function setMenu(open) {
     if (!mBtn) return;
@@ -57,6 +62,7 @@
     mMenu.hidden = !open;
     header.classList.toggle('menu-open', open);
     root.style.overflow = open ? 'hidden' : '';
+    onScroll();
     const lab = $('.sr', mBtn);
     if (lab) lab.textContent = open ? T({ ro: 'Închide meniul', en: 'Close the menu', es: 'Cerrar el menú' }) : T({ ro: 'Deschide meniul', en: 'Open the menu', es: 'Abrir el menú' });
   }
@@ -76,55 +82,29 @@
     history.replaceState(null, '', '#' + id);
   });
 
-  /* ---------- portada: fachada a dos aguas, titular en dos tonos y tejado ---------- */
-  const stage = $('[data-hero]'), gable = $('[data-gable]'), h1 = $('[data-h1]'), h1c = $('[data-h1-copy]'), roof = $('[data-roof]');
-  // el titular no puede pasar del ancho útil: en escritorio la primera línea entera, en móvil la palabra más larga
-  function fitH1() {
-    if (!h1) return;
-    h1.style.removeProperty('--h1'); h1c && h1c.style.removeProperty('--h1');
-    const gut = Math.max(20, Math.min(56, innerWidth * .04));
-    const max = stage.clientWidth - 2 * gut - 8;
-    const probe = document.createElement('span');
-    probe.style.cssText = 'position:absolute;left:0;top:0;visibility:hidden;white-space:nowrap;font:inherit;letter-spacing:inherit';
-    h1.appendChild(probe);
-    const l1 = $('.l1', h1).textContent.trim();
-    const parts = innerWidth < 900 ? l1.split(/\s+/) : [l1];
-    let w = 0;
-    for (const t of parts) { probe.textContent = t; w = Math.max(w, probe.getBoundingClientRect().width); }
-    probe.style.fontSize = '1.32em'; probe.textContent = 'Melek'; w = Math.max(w, probe.getBoundingClientRect().width);
-    h1.removeChild(probe);
-    const fs = parseFloat(getComputedStyle(h1).fontSize);
-    if (w > max) { const v = Math.floor(fs * max / w) + 'px'; h1.style.setProperty('--h1', v); h1c && h1c.style.setProperty('--h1', v); }
-  }
-  const roofK = () => (innerWidth < 900 ? .3 : .34); // misma pendiente que --gr en el CSS
-  function syncHero() {
-    if (!stage || !gable || !h1) return;
-    fitH1();
-    const s = stage.getBoundingClientRect(), g = gable.getBoundingClientRect(), r = h1.getBoundingClientRect();
-    if (!g.width || !s.width) return; // ventana sin tamaño (pestaña o iframe oculto): se recalcula al redimensionar
-    if (h1c) { h1c.style.left = (r.left - g.left) + 'px'; h1c.style.top = (r.top - g.top) + 'px'; h1c.style.width = r.width + 'px'; }
-    if (roof) {
-      const gw = g.width, gr = gw * roofK();
-      const x0 = g.left - s.left, y0 = g.top - s.top, cx = x0 + gw / 2, slope = gr / (gw / 2), d = Math.min(30, gw * .06, Math.max(0, x0 - 2));
-      const L1 = `M${x0 - d},${y0 + gr + d * slope} L${cx},${y0}`, R1 = `M${x0 + gw + d},${y0 + gr + d * slope} L${cx},${y0}`;
-      roof.setAttribute('viewBox', `0 0 ${s.width} ${s.height}`);
-      roof.innerHTML = `<path class="r-board" d="${L1}" pathLength="1"/><path class="r-board" d="${R1}" pathLength="1"/><path class="r-edge" d="${L1}" pathLength="1"/><path class="r-edge" d="${R1}" pathLength="1"/>`;
-    }
-  }
-  function heroIntro() {
-    const g = window.gsap;
-    if (!g || RM.matches || !gable) return;
-    const gw = gable.offsetWidth, gh = gable.offsetHeight, gr = gw * roofK();
-    if (!gw || !gh) return; // sin tamaño no hay entrada: la portada queda en su estado final
-    const from = `polygon(0px ${gh}px, ${gw / 2}px ${gh}px, ${gw}px ${gh}px, ${gw}px ${gh}px, 0px ${gh}px)`;
-    const to = `polygon(0px ${gr}px, ${gw / 2}px 0px, ${gw}px ${gr}px, ${gw}px ${gh}px, 0px ${gh}px)`;
-    const tl = g.timeline({ defaults: { ease: 'power3.out' } });
-    tl.fromTo(gable, { clipPath: from }, { clipPath: to, duration: 1.15, ease: 'power3.inOut', clearProps: 'clipPath' })
-      .fromTo($('img', gable), { scale: 1.12 }, { scale: 1, duration: 1.6, clearProps: 'scale' }, 0)
-      .fromTo($$('path', roof), { strokeDasharray: 1, strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: .8, ease: 'power2.inOut', clearProps: 'strokeDasharray,strokeDashoffset' }, .75)
-      .fromTo([...$$('.l1', h1), ...$$('.l1', h1c)], { yPercent: 60, opacity: 0 }, { yPercent: 0, opacity: 1, duration: .9, clearProps: 'transform,opacity' }, .55)
-      .fromTo([...$$('.l2', h1), ...$$('.l2', h1c)], { yPercent: 50, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 1, clearProps: 'transform,opacity' }, .7)
-      .fromTo(['.hero-foot', '.hero-side'], { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: .8, stagger: .08, clearProps: 'transform,opacity' }, 1.05);
+  /* ---------- portada: vídeo a pantalla completa, horizontal o vertical según la pantalla ---------- */
+  const hv = $('[data-hero-vid]');
+  if (hv && heroEl) {
+    let cur = '', heroVisible = true;
+    const pick = () => {
+      if (!innerWidth || !innerHeight) return; // ventana sin tamaño (pestaña oculta)
+      const port = innerWidth / innerHeight < .8;
+      const want = port ? 'port' : 'land';
+      if (want === cur) return;
+      cur = want;
+      hv.poster = port ? hv.dataset.posterPort : hv.dataset.posterLand;
+      if (RM.matches) return; // movimiento reducido: solo la imagen fija
+      hv.src = port ? hv.dataset.port : hv.dataset.land;
+      hv.load();
+      if (heroVisible) hv.play().catch(() => {});
+    };
+    new IntersectionObserver(([en]) => {
+      heroVisible = en.isIntersecting;
+      if (!hv.getAttribute('src')) return;
+      if (heroVisible) hv.play().catch(() => {}); else hv.pause();
+    }, { threshold: .05 }).observe(heroEl);
+    pick();
+    addEventListener('resize', pick);
   }
 
   /* ---------- vídeos (se cargan y reproducen solo a la vista) ---------- */
@@ -567,18 +547,14 @@
     renderStatus(); renderStats(false); renderMenu(); renderDrinks(); renderAll();
     if (tableEl) renderPlan(false);
     const lab = mBtn && $('.sr', mBtn); if (lab && mBtn.getAttribute('aria-expanded') !== 'true') lab.textContent = T({ ro: 'Deschide meniul', en: 'Open the menu', es: 'Abrir el menú' });
-    syncHero();
   }
   document.addEventListener('langchange', () => {
     renderLang();
     if (!ready) {
       ready = true;
-      // la entrada fija sus estados iniciales en el mismo fotograma: después ya se puede mostrar la portada
-      const go = () => { syncHero(); try { heroIntro(); } finally { root.classList.remove('intro'); } };
-      (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(go);
+      // la entrada de la portada arranca con las letras ya cargadas (o a los 1,5 s, desde el <head>)
+      (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => root.classList.add('ready'));
     }
   });
-  addEventListener('resize', () => { syncHero(); });
-  if (document.fonts) document.fonts.addEventListener('loadingdone', syncHero);
   setInterval(renderStatus, 60000);
 })();
