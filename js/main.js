@@ -1,5 +1,5 @@
-// Melek Coffee Pub · estado en vivo (hora de Bucarest), portada a dos aguas, vídeos, planificador de platou
-// con quemado Lichtenberg y bengalas, carta, bebidas y horario. Los textos dinámicos siguen al idioma (evento langchange).
+// Melek Coffee Pub · estado en vivo (hora de Bucarest), portada de vídeo, vídeos, planificador de platou en una mesa redonda
+// (sillas y platos que se reparten, la tabla real en el centro, bengalas), carta, bebidas y horario. Los textos dinámicos siguen al idioma (evento langchange).
 (() => {
   const $ = (s, c = document) => c.querySelector(s);
   const $$ = (s, c = document) => [...c.querySelectorAll(s)];
@@ -146,223 +146,172 @@
   const statsBox = $('.melek-stats');
   if (statsBox) { const io = new IntersectionObserver(([en]) => { if (en.isIntersecting) { renderStats(true); io.disconnect(); } }, { threshold: .5 }); io.observe(statsBox); }
 
-  /* ---------- planificador: ¿cuántos sois? ---------- */
+  /* ---------- planificador: ¿cuántos sois? Mesa redonda vista desde arriba ---------- */
   const P = window.PLATTERS || {};
   const OPTIONS = { 1: ['melek1', 'vanator1'], 2: ['melek2'], 3: ['melek3', 'pane3'], 4: ['melek4', 'vanator4'], 5: ['melek5'], 6: ['melek6', 'vanator6'], 7: [['melek4', 'melek3']], 8: [['melek4', 'melek4']], 9: [['melek5', 'melek4']], 10: ['oriental10', ['melek5', 'melek5']] };
-  const SEATS_X = [140, 320, 500, 680, 860];
-  const ORDER = [['top', 2], ['bottom', 2], ['top', 1], ['bottom', 1], ['top', 3], ['bottom', 3], ['top', 0], ['bottom', 0], ['top', 4], ['bottom', 4]];
+  const MAXN = 10;
+  // fotos reales: todas las Melek son la misma tabla redonda en distintos tamaños; la Pane no tiene foto
+  const PIMG = (k) => k.startsWith('melek') ? 'plt-melek' : k.startsWith('vanator') ? 'plt-vanator-sq' : k === 'oriental10' ? 'plt-long-sq' : '';
   const IMG = {
     'plt-melek': { src: 'assets/img/plt-melek-720.webp', srcset: 'assets/img/plt-melek-720.webp 720w, assets/img/plt-melek-1100.webp 1100w' },
-    'platou2-top': { src: 'assets/img/platou2-top-680.webp', srcset: 'assets/img/platou2-top-680.webp 680w' },
-    'plt-grill-sq': { src: 'assets/img/plt-grill-sq-600.webp', srcset: 'assets/img/plt-grill-sq-600.webp 600w, assets/img/plt-grill-sq-900.webp 900w' },
     'plt-vanator-sq': { src: 'assets/img/plt-vanator-sq-830.webp', srcset: 'assets/img/plt-vanator-sq-830.webp 830w' },
     'plt-long-sq': { src: 'assets/img/plt-long-sq-600.webp', srcset: 'assets/img/plt-long-sq-600.webp 600w, assets/img/plt-long-sq-900.webp 900w' }
   };
   const ALT = {
-    'plt-melek': { ro: 'Platou Melek pe o tablă rotundă: ceafă, mici, cârnați, cartofi cu mozzarella, murături și sosuri', en: 'Melek platter on a round board: pork neck, mici, sausages, potatoes with mozzarella, pickles and sauces', es: 'Tabla Melek redonda: presa de cerdo, mici, salchichas, patatas con mozzarella, encurtidos y salsas' },
-    'platou2-top': { ro: 'Platou Melek de 2 persoane văzut de sus, pe o tablă rotundă de lemn', en: 'Melek platter for 2 seen from above, on a round wooden board', es: 'Tabla Melek para 2 vista desde arriba, sobre una tabla redonda de madera' },
-    'plt-grill-sq': { ro: 'Platou Melek cu cârnați, mici, ceafă, cartofi cu brânză rasă și lămâie', en: 'Melek platter with sausages, mici, pork neck, potatoes with grated cheese and lemon', es: 'Tabla Melek con salchichas, mici, presa, patatas con queso rallado y limón' },
-    'plt-vanator-sq': { ro: 'Platou vânătoresc pe o tablă lungă: cotlete, pastramă pe mămăligă și cartofi', en: 'Hunter’s platter on a long board: chops, pastrami on polenta and potatoes', es: 'Tabla del cazador: chuletas, pastrami sobre polenta y patatas' },
-    'plt-long-sq': { ro: 'Platou lung pe masă, cu adana, frigărui, roșii coapte și ardei iute', en: 'Long platter on the table with adana, skewers, roasted tomatoes and chillies', es: 'Tabla larga en la mesa con adana, brochetas, tomates asados y guindillas' }
+    'plt-melek': { ro: 'Platou Melek pe tabla rotundă: ceafă, mici, cârnați, cartofi cu mozzarella, murături și sosuri', en: 'Melek platter on its round board: pork neck, mici, sausages, potatoes with mozzarella, pickles and sauces', es: 'Tabla Melek redonda: presa de cerdo, mici, salchichas, patatas con mozzarella, encurtidos y salsas' },
+    'plt-vanator-sq': { ro: 'Platou vânătoresc: cotlete, pastramă pe mămăligă și cartofi', en: 'Hunter’s platter: chops, pastrami on polenta and potatoes', es: 'Tabla del cazador: chuletas, pastrami sobre polenta y patatas' },
+    'plt-long-sq': { ro: 'Platou lung cu adana, frigărui, roșii coapte și cartofi cu brânză', en: 'Long platter with adana, skewers, roasted tomatoes and potatoes with cheese', es: 'Tabla larga con adana, brochetas, tomates asados y patatas con queso' }
   };
   const shortName = (k) => k.startsWith('melek') ? 'Platou Melek' : k.startsWith('vanator') ? (k === 'vanator4' ? 'Platou Melek Vânătoresc' : 'Platou Vânătoresc') : k === 'pane3' ? 'Platou Melek Pane' : 'Platou Melek Oriental';
   const people = (n) => n + ' ' + (n === 1 ? T({ ro: 'persoană', en: 'person', es: 'persona' }) : T({ ro: 'persoane', en: 'people', es: 'personas' }));
 
-  const plan = { n: 4, choice: 0, shown: 0, started: false };
+  const plan = { n: 4, choice: 0, started: false };
   const tableEl = $('[data-table]');
-  const board = $('[data-board]');
-  const cvWood = board && $('.board-wood', board), cvBurn = board && $('.board-burn', board), cvFx = board && $('.board-fx', board);
-  const label = $('[data-board-label]');
-  const seatBtns = {}; const plates = {};
+  const cvWood = tableEl && $('.board-wood', tableEl), cvFx = tableEl && $('.board-fx', tableEl);
+  const chairs = [], plates = [], platters = tableEl ? $$('.platter', tableEl) : [];
+  let layout = [];
 
-  function buildSeats() {
-    if (!tableEl) return;
-    ['top', 'bottom'].forEach((side) => {
-      const row = $(`[data-seats="${side}"]`, tableEl);
-      SEATS_X.forEach((x, i) => {
-        const b = document.createElement('button');
-        b.type = 'button'; b.className = 'seat'; b.style.left = (x / 10) + '%';
-        b.dataset.side = side; b.dataset.i = i;
-        row.appendChild(b); seatBtns[side + i] = b;
-        const pl = document.createElement('i');
-        pl.className = 'plate'; pl.style.left = (x / 10) + '%'; pl.style.top = side === 'top' ? '12%' : '88%';
-        $('[data-plates]', board).appendChild(pl); plates[side + i] = pl;
-      });
-    });
-    tableEl.addEventListener('click', (e) => {
-      const b = e.target.closest('.seat'); if (!b) return;
-      const k = ORDER.findIndex(([s, i]) => s === b.dataset.side && i === +b.dataset.i);
-      setCount(k + 1 === plan.n ? Math.max(1, k) : k + 1);
+  function buildTable() {
+    const cl = $('[data-chairs]', tableEl), pl = $('[data-plates]', tableEl);
+    for (let i = 0; i < MAXN; i++) {
+      const c = document.createElement('i'); c.className = 'chair'; cl.appendChild(c); chairs.push(c);
+      const p = document.createElement('i'); p.className = 'plate'; pl.appendChild(p); plates.push(p);
+    }
+    placeState();
+  }
+  // el primero se sienta abajo (frente a quien mira) y el resto se reparte a partes iguales;
+  // las sillas libres esperan donde se sentaría el siguiente
+  const angle = (i, n) => 180 + i * 360 / n;
+  function placeState() {
+    const n = plan.started ? plan.n : 0;
+    for (let i = 0; i < MAXN; i++) {
+      const on = i < n, a = on ? angle(i, n) : angle(i, i + 1);
+      chairs[i].style.transform = `translate(-50%, -50%) rotate(${a}deg) translateY(${on ? -43.5 : -49}cqw)`;
+      plates[i].style.transform = `translate(-50%, -50%) rotate(${a}deg) translateY(-31cqw) scale(${on ? 1 : .3})`;
+      chairs[i].classList.toggle('on', on); plates[i].classList.toggle('on', on);
+    }
+  }
+  // tamaño de las tablas (en % del ancho de la mesa): crecen con las personas; dos tablas van una junto a otra
+  function platterLayout(keys) {
+    if (keys.length === 1) return [{ d: keys[0] === 'oriental10' ? 46 : 25 + Math.min(6, P[keys[0]].n) * 3.7, x: 0 }];
+    const ds = keys.map((k) => 18 + P[k].n * 1.4), tot = ds[0] + ds[1] - 1.5;
+    return [{ d: ds[0], x: -tot / 2 + ds[0] / 2 }, { d: ds[1], x: tot / 2 - ds[1] / 2 }];
+  }
+  function platterState(keys, animate) {
+    layout = plan.started ? platterLayout(keys) : [];
+    platters.forEach((el, j) => {
+      const lay = layout[j], k = keys[j];
+      el.classList.toggle('on', !!lay);
+      if (!lay) return;
+      el.style.setProperty('--d', lay.d.toFixed(2)); el.style.setProperty('--x', lay.x.toFixed(2));
+      const ik = PIMG(k), img = $('img', el);
+      el.classList.toggle('no-photo', !ik);
+      $('.platter-name', el).textContent = ik ? '' : 'Pane';
+      if (!ik) { img.removeAttribute('src'); img.removeAttribute('srcset'); img.dataset.k = ''; img.alt = ''; return; }
+      const alt = j && keys[0] === k ? '' : T(ALT[ik]); // la segunda tabla igual a la primera: decorativa
+      if (img.dataset.k === ik) { img.alt = alt; return; }
+      const swap = () => {
+        img.srcset = IMG[ik].srcset; img.src = IMG[ik].src; img.dataset.k = ik; img.alt = alt;
+        const show = () => img.classList.remove('is-swapping');
+        img.decode ? img.decode().then(show, show) : show();
+      };
+      if (img.dataset.k && animate && !RM.matches) { img.classList.add('is-swapping'); setTimeout(swap, 240); } else swap();
     });
   }
 
-  /* madera de la tabla (canvas, una vez por tamaño) */
-  let W = 0, H = 0, DPR = 1;
-  function sizeBoard() {
-    if (!board) return;
-    const r = board.getBoundingClientRect();
+  /* la madera de la mesa (canvas, se repinta solo al cambiar de tamaño) */
+  let DPR = 1;
+  function sizeTable() {
+    const r = tableEl.getBoundingClientRect(); if (!r.width) return;
     DPR = Math.min(2, devicePixelRatio || 1);
-    W = r.width; H = r.height;
-    [cvWood, cvBurn].forEach((c) => { c.width = Math.round(W * DPR); c.height = Math.round(H * DPR); });
-    const fr = cvFx.getBoundingClientRect(); cvFx.width = Math.round(fr.width * DPR); cvFx.height = Math.round(fr.height * DPR);
-    drawWood(); drawBurns();
+    [cvWood, cvFx].forEach((c) => { c.width = Math.round(r.width * DPR); c.height = Math.round(r.height * DPR); });
+    drawWood();
   }
   function rnd(seed) { let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647; }
   function drawWood() {
-    const g = cvWood.getContext('2d'), w = cvWood.width, h = cvWood.height, R = Math.min(h * .2, w * .05);
-    g.clearRect(0, 0, w, h);
-    g.save();
-    g.beginPath(); g.roundRect(0, 0, w, h, R); g.clip();
-    const base = g.createLinearGradient(0, 0, 0, h);
-    base.addColorStop(0, '#d39c61'); base.addColorStop(.45, '#c98f53'); base.addColorStop(1, '#b47a42');
-    g.fillStyle = base; g.fillRect(0, 0, w, h);
-    const r = rnd(1234);
+    const g = cvWood.getContext('2d'), w = cvWood.width, cx = w / 2, cy = cvWood.height / 2, R = w * .38, TAU = Math.PI * 2;
+    g.clearRect(0, 0, w, cvWood.height);
+    // sombra blanda sobre el suelo
+    g.save(); g.shadowColor = 'rgba(43,24,16,.4)'; g.shadowBlur = w * .05; g.shadowOffsetY = w * .025;
+    g.beginPath(); g.arc(cx, cy, R, 0, TAU); g.fillStyle = '#b47a42'; g.fill(); g.restore();
+    g.save(); g.beginPath(); g.arc(cx, cy, R, 0, TAU); g.clip();
+    const base = g.createLinearGradient(0, cy - R, 0, cy + R);
+    base.addColorStop(0, '#d6a066'); base.addColorStop(.5, '#c98f53'); base.addColorStop(1, '#b17641');
+    g.fillStyle = base; g.fillRect(cx - R, cy - R, R * 2, R * 2);
+    const r = rnd(1234), x0 = cx - R - 10, x1 = cx + R + 10;
     // vetas largas, horizontales y algo onduladas
-    for (let k = 0; k < 170; k++) {
-      const y0 = r() * h, amp = (2 + r() * 7) * DPR, f = (0.6 + r() * 2.4) / w * Math.PI * 2, ph = r() * 6.28;
-      const dark = r() < .62;
+    for (let k = 0; k < 160; k++) {
+      const y0 = cy - R + r() * R * 2, amp = (2 + r() * 7) * DPR, f = (0.6 + r() * 2.4) / (R * 2) * TAU, ph = r() * 6.28, dark = r() < .62;
       g.strokeStyle = dark ? `rgba(110,62,28,${.05 + r() * .12})` : `rgba(240,196,140,${.05 + r() * .12})`;
       g.lineWidth = (.5 + r() * 1.8) * DPR;
       g.beginPath();
-      for (let x = -10; x <= w + 10; x += 14 * DPR) { const y = y0 + Math.sin(x * f + ph) * amp + Math.sin(x * f * 3.1 + ph * 2) * amp * .25; x < 0 ? g.moveTo(x, y) : g.lineTo(x, y); }
+      for (let x = x0; x <= x1; x += 14 * DPR) { const y = y0 + Math.sin(x * f + ph) * amp + Math.sin(x * f * 3.1 + ph * 2) * amp * .25; x === x0 ? g.moveTo(x, y) : g.lineTo(x, y); }
       g.stroke();
     }
-    // bandas de color
-    for (let k = 0; k < 6; k++) { const y = r() * h, bh = (8 + r() * 30) * DPR; g.fillStyle = `rgba(${r() < .5 ? '120,70,30' : '235,190,130'},${.05 + r() * .06})`; g.fillRect(0, y, w, bh); }
-    // bisel: luz arriba, sombra abajo y en los extremos
-    const bev = g.createLinearGradient(0, 0, 0, h);
-    bev.addColorStop(0, 'rgba(255,236,205,.35)'); bev.addColorStop(.06, 'rgba(255,236,205,0)'); bev.addColorStop(.9, 'rgba(60,30,10,0)'); bev.addColorStop(1, 'rgba(60,30,10,.35)');
-    g.fillStyle = bev; g.fillRect(0, 0, w, h);
-    const side = g.createLinearGradient(0, 0, w, 0);
-    side.addColorStop(0, 'rgba(60,30,10,.28)'); side.addColorStop(.04, 'rgba(60,30,10,0)'); side.addColorStop(.96, 'rgba(60,30,10,0)'); side.addColorStop(1, 'rgba(60,30,10,.28)');
-    g.fillStyle = side; g.fillRect(0, 0, w, h);
-    g.restore();
-    g.strokeStyle = 'rgba(70,36,14,.55)'; g.lineWidth = 1.5 * DPR;
-    g.beginPath(); g.roundRect(.75 * DPR, .75 * DPR, w - 1.5 * DPR, h - 1.5 * DPR, R); g.stroke();
-  }
-
-  /* quemado Lichtenberg (datos de js/burns.js) */
-  const TREES = [];
-  function prepTrees() {
-    const B = window.BURNS; if (!B || TREES.length) return;
-    B.seats.forEach((s) => {
-      const d = s.d, n = d.length / 4, X = new Float32Array(n), Y = new Float32Array(n), Pp = new Int32Array(n), K = new Uint8Array(n), kids = new Uint16Array(n), first = new Int32Array(n).fill(-1);
-      for (let i = 0; i < n; i++) { X[i] = d[i * 4]; Y[i] = d[i * 4 + 1]; Pp[i] = i ? i - d[i * 4 + 2] : -1; K[i] = d[i * 4 + 3]; if (i) { kids[Pp[i]]++; if (first[Pp[i]] < 0) first[Pp[i]] = i; } }
-      for (let it = 0; it < 3; it++) { // suavizado: quita el dentado de la rejilla sin mover puntas ni bifurcaciones
-        const nx = X.slice(), ny = Y.slice();
-        for (let i = 1; i < n; i++) { if (kids[i] !== 1) continue; const a = Pp[i], b = first[i]; nx[i] = X[i] * .5 + (X[a] + X[b]) * .25; ny[i] = Y[i] * .5 + (Y[a] + Y[b]) * .25; }
-        X.set(nx); Y.set(ny);
-      }
-      TREES.push({ side: s.side, x: s.x, n, X, Y, P: Pp, K, prog: 0, target: 0, alpha: 0, flash: 1 });
-    });
-  }
-  const treeOf = (side, i) => TREES[(side === 'top' ? 0 : 5) + i];
-  function drawBurns() {
-    if (!cvBurn || !TREES.length) return;
-    const g = cvBurn.getContext('2d'), sx = cvBurn.width / 1000, sy = cvBurn.height / 300, sc = Math.max(.42, sx);
-    g.clearRect(0, 0, cvBurn.width, cvBurn.height);
-    g.lineCap = 'round'; g.lineJoin = 'round';
-    for (const t of TREES) {
-      if (t.alpha <= 0 || t.prog <= 0) continue;
-      const m = Math.max(1, Math.floor(t.prog * t.n));
-      const buckets = new Map();
-      for (let i = 1; i < m; i++) {
-        const k = t.K[i], main = k >= 10, b = main ? 10 : k;
-        let p = buckets.get(b); if (!p) { p = new Path2D(); buckets.set(b, p); }
-        const a = t.P[i]; p.moveTo(t.X[a] * sx, t.Y[a] * sy); p.lineTo(t.X[i] * sx, t.Y[i] * sy);
-      }
-      for (const [b, p] of buckets) { // halo chamuscado
-        const w = (b === 10 ? 3 : .6 + b * .26) * sc;
-        g.strokeStyle = `rgba(120,58,18,${.18 * t.alpha})`; g.lineWidth = w * 2.6; g.stroke(p);
-      }
-      for (const [b, p] of buckets) { // surco quemado
-        const w = (b === 10 ? 3 : .6 + b * .26) * sc;
-        g.strokeStyle = `rgba(48,22,9,${.9 * t.alpha})`; g.lineWidth = Math.max(.6 * DPR, w); g.stroke(p);
-      }
-      // brasa: la punta que avanza y, al tocar el rótulo, el destello del canal principal
-      if (t.prog < 1 || t.flash < 1) {
-        g.save(); g.globalCompositeOperation = 'lighter';
-        const hot = Math.max(8, Math.floor(t.n * .1));
-        const glow = new Path2D();
-        if (t.prog < 1) for (let i = Math.max(1, m - hot); i < m; i++) { const a = t.P[i]; glow.moveTo(t.X[a] * sx, t.Y[a] * sy); glow.lineTo(t.X[i] * sx, t.Y[i] * sy); }
-        else for (let i = 1; i < t.n; i++) { if (t.K[i] < 10) continue; const a = t.P[i]; glow.moveTo(t.X[a] * sx, t.Y[a] * sy); glow.lineTo(t.X[i] * sx, t.Y[i] * sy); }
-        const ga = t.prog < 1 ? 1 : 1 - t.flash;
-        g.shadowColor = `rgba(255,120,40,${.9 * ga})`; g.shadowBlur = 10 * DPR;
-        g.strokeStyle = `rgba(255,140,60,${.75 * ga})`; g.lineWidth = 2.4 * sc; g.stroke(glow);
-        g.shadowBlur = 0; g.strokeStyle = `rgba(255,226,170,${.8 * ga})`; g.lineWidth = 1 * sc; g.stroke(glow);
-        g.restore();
-      }
+    // juntas entre los tablones
+    for (let k = 1; k < 6; k++) {
+      const y = cy - R + R * 2 * k / 6;
+      g.fillStyle = 'rgba(78,40,15,.3)'; g.fillRect(x0, y - .7 * DPR, x1 - x0, 1.2 * DPR);
+      g.fillStyle = 'rgba(255,228,186,.16)'; g.fillRect(x0, y + .6 * DPR, x1 - x0, 1 * DPR);
     }
+    // barniz: luz arriba a la izquierda, el canto más oscuro
+    const lit = g.createRadialGradient(cx - R * .3, cy - R * .35, R * .05, cx, cy, R);
+    lit.addColorStop(0, 'rgba(255,238,205,.26)'); lit.addColorStop(.6, 'rgba(255,238,205,0)'); lit.addColorStop(.92, 'rgba(70,36,14,.12)'); lit.addColorStop(1, 'rgba(70,36,14,.4)');
+    g.fillStyle = lit; g.fillRect(cx - R, cy - R, R * 2, R * 2);
+    g.restore();
+    // canto y filete de latón
+    g.lineWidth = Math.max(1.5, w * .006); g.strokeStyle = '#6e3d1a';
+    g.beginPath(); g.arc(cx, cy, R - g.lineWidth / 2, 0, TAU); g.stroke();
+    const brass = g.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+    brass.addColorStop(0, '#f3dc9f'); brass.addColorStop(.35, '#b98b3f'); brass.addColorStop(.6, '#ecca80'); brass.addColorStop(1, '#94692a');
+    g.lineWidth = Math.max(1.2, w * .0042); g.strokeStyle = brass;
+    g.beginPath(); g.arc(cx, cy, R * .962, 0, TAU); g.stroke();
   }
 
-  /* bengalas (al llegar a 10 con la tabla Oriental) */
+  /* bengalas clavadas en la tabla (al llegar a 10 con la Oriental), vistas desde arriba */
   const sparks = []; let sparkUntil = 0;
   function fireSparklers() {
     if (RM.matches || !cvFx) return;
-    sparkUntil = performance.now() + 2600; loop();
+    sparkUntil = performance.now() + 2800; loop();
   }
   function stepSparks(dt, now) {
-    if (!cvFx) return false;
-    const g = cvFx.getContext('2d'), w = cvFx.width, h = cvFx.height;
-    // el lienzo de efectos desborda la tabla: 6 % a cada lado y 40 % arriba y abajo
-    const by = (v) => (0.4 / 1.8 + v / 300 / 1.8) * h;
-    const toX = (u) => (0.06 * (w / 1.12) + u / 1000 * (w / 1.12));
-    if (now < sparkUntil) {
-      const rate = 340 * dt, sc = w / 1000;
-      for (let k = 0; k < rate; k++) {
-        for (const ex of [372, 628]) {
-          const a = -Math.PI / 2 + (Math.random() - .5) * 2.2, sp = (160 + Math.random() * 300) * sc;
-          sparks.push({ x: toX(ex), y: by(112), vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: .5 + Math.random() * .9, age: 0 });
-        }
-      }
+    const g = cvFx.getContext('2d'), w = cvFx.width, h = cvFx.height, u = w / 100;
+    const lay = layout[0] || { d: 40, x: 0 }, pr = lay.d * u * .5;
+    const em = [-90, 30, 150].map((a) => [w / 2 + lay.x * u + Math.cos(a * Math.PI / 180) * pr * .42, h / 2 + Math.sin(a * Math.PI / 180) * pr * .42]);
+    const on = now < sparkUntil;
+    if (on) for (let k = 0; k < 300 * dt; k++) for (const [ex, ey] of em) {
+      const a = Math.random() * Math.PI * 2, sp = (16 + Math.random() * 46) * u;
+      sparks.push({ x: ex, y: ey, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: .35 + Math.random() * .75, age: 0 });
     }
     g.clearRect(0, 0, w, h);
     g.save(); g.globalCompositeOperation = 'lighter'; g.lineCap = 'round';
+    if (on) for (const [ex, ey] of em) { // resplandor que parpadea bajo cada bengala
+      const rr = u * (5 + Math.random() * 2.5), gl = g.createRadialGradient(ex, ey, 0, ex, ey, rr);
+      gl.addColorStop(0, 'rgba(255,236,190,.95)'); gl.addColorStop(.3, 'rgba(255,170,70,.45)'); gl.addColorStop(1, 'rgba(255,120,40,0)');
+      g.fillStyle = gl; g.beginPath(); g.arc(ex, ey, rr, 0, Math.PI * 2); g.fill();
+    }
+    const B = [new Path2D(), new Path2D(), new Path2D(), new Path2D()], drag = Math.exp(-2.4 * dt);
     for (let i = sparks.length - 1; i >= 0; i--) {
       const s = sparks[i];
       s.age += dt; if (s.age > s.life) { sparks.splice(i, 1); continue; }
-      const px = s.x, py = s.y;
-      s.vy += 520 * (w / 1000) * dt; s.x += s.vx * dt; s.y += s.vy * dt;
-      const k = 1 - s.age / s.life;
-      g.strokeStyle = `rgba(255,${170 + 80 * k | 0},${80 + 140 * k | 0},${k})`;
-      g.shadowColor = 'rgba(255,170,60,.9)'; g.shadowBlur = 6 * DPR;
-      g.lineWidth = (1.1 + k * 1.6) * DPR;
-      g.beginPath(); g.moveTo(px, py); g.lineTo(s.x, s.y); g.stroke();
+      s.vx *= drag; s.vy *= drag; s.x += s.vx * dt; s.y += s.vy * dt;
+      const b = Math.min(3, Math.floor((1 - s.age / s.life) * 4));
+      B[b].moveTo(s.x - s.vx * .035, s.y - s.vy * .035); B[b].lineTo(s.x, s.y);
     }
+    B.forEach((p, b) => {
+      const k = (b + 1) / 4;
+      g.strokeStyle = `rgba(255,140,50,${.35 * k})`; g.lineWidth = (2.6 + k * 2) * DPR; g.stroke(p);
+      g.strokeStyle = `rgba(255,${200 + 50 * k | 0},${140 + 100 * k | 0},${k})`; g.lineWidth = (.8 + k * .9) * DPR; g.stroke(p);
+    });
     g.restore();
-    return sparks.length > 0 || now < sparkUntil;
+    return sparks.length > 0 || on;
   }
-
   let raf = 0, last = 0;
   function loop() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(tick); } }
   function tick(now) {
     raf = 0;
     const dt = Math.min(.05, (now - last) / 1000); last = now;
-    let busy = false;
-    for (const t of TREES) {
-      if (t.target > 0) {
-        if (t.alpha < 1) { t.alpha = Math.min(1, t.alpha + dt * 6); busy = true; }
-        if (t.prog < 1) { t.prog = Math.min(1, t.prog + dt / 1.35); if (t.prog >= 1) t.flash = 0; busy = true; }
-        else if (t.flash < 1) { t.flash = Math.min(1, t.flash + dt / .7); busy = true; }
-      } else if (t.alpha > 0) { t.alpha = Math.max(0, t.alpha - dt / .45); if (t.alpha === 0) t.prog = 0; busy = true; }
-    }
-    drawBurns();
-    if (stepSparks(dt, now)) busy = true;
-    if (busy) raf = requestAnimationFrame(tick);
-  }
-
-  function seatState(animate) {
-    prepTrees();
-    ORDER.forEach(([side, i], k) => {
-      const on = k < plan.n;
-      const b = seatBtns[side + i]; b.setAttribute('aria-pressed', String(on));
-      b.setAttribute('aria-label', T({ ro: 'Persoana ', en: 'Person ', es: 'Persona ' }) + (k + 1));
-      plates[side + i].classList.toggle('on', on);
-      const t = treeOf(side, i); if (!t) return;
-      if (on && t.target === 0) { t.target = 1; if (!animate || RM.matches) { t.prog = 1; t.alpha = 1; t.flash = 1; } }
-      if (!on && t.target === 1) { t.target = 0; if (!animate || RM.matches) { t.alpha = 0; t.prog = 0; } }
-    });
-    if (animate && !RM.matches) loop(); else drawBurns();
+    if (stepSparks(dt, now)) raf = requestAnimationFrame(tick);
   }
 
   function optionLabel(o) {
@@ -381,10 +330,6 @@
     // elección entre tablas de la carta para el mismo grupo
     const ch = $('[data-choice]');
     ch.innerHTML = opts.length > 1 ? opts.map((x, i) => `<button type="button" aria-pressed="${i === plan.choice}" data-ch="${i}">${esc(optionLabel(x))}</button>`).join('') : '';
-    // rótulo quemado en la tabla
-    const lname = list.length > 1 ? (keys[0] === keys[1] ? `2 × ${shortName(keys[0])}` : T({ ro: '2 platouri Melek', en: '2 Melek platters', es: '2 tablas Melek' })) : shortName(keys[0]);
-    label.innerHTML = `<b>${esc(lname)}</b><span>${g ? '<i>' + esc(grams(g)) + ' · </i>' : ''}${esc(lei(total))}</span>`;
-    if (animate && !RM.matches) { label.classList.remove('burn-in'); void label.offsetWidth; label.classList.add('burn-in'); }
     // ficha
     $('[data-r-name]').textContent = list.map((p) => p.ro).join(' + ');
     $('[data-r-meta]').textContent = people(n) + (g ? ' · ' + grams(g) : '');
@@ -392,21 +337,11 @@
     $('[data-r-pp]').textContent = lei(Math.round(total / n)) + ' ' + T({ ro: 'de persoană', en: 'per person', es: 'por persona' });
     const ul = $('[data-contents]');
     ul.innerHTML = list.map((p, j) => (list.length > 1 ? `<li><b>${esc(p.ro)}</b></li>` : '') + p.c.map((c) => `<li>${esc(c)}</li>`).join('')).join('');
-    ul.classList.toggle('is-long', ul.children.length > 11); // la Oriental (18) y las dos tablas: en dos columnas
+    ul.classList.toggle('is-long', ul.children.length > 11);
     const gift = $('[data-gift]');
     const hasGift = list.some((p) => p.gift);
     gift.hidden = !hasGift;
     if (hasGift) gift.textContent = T({ ro: 'Din partea casei: o sticlă de vin Aerosoli și foc de artificii.', en: 'On the house: a bottle of Aerosoli wine and sparklers.', es: 'Por cuenta de la casa: una botella de vino Aerosoli y bengalas.' });
-    // foto de la tabla (la Pane no tiene foto propia: se muestra solo su nombre quemado)
-    const imgKey = list[0].img, img = $('[data-r-img]'), noph = $('[data-r-nophoto]');
-    if (imgKey && IMG[imgKey]) {
-      noph.hidden = true; img.hidden = false;
-      const alt = T(ALT[imgKey]);
-      if (img.dataset.k !== imgKey) {
-        const swap = () => { img.src = IMG[imgKey].src; img.srcset = IMG[imgKey].srcset; img.sizes = '(max-width: 899px) 76vw, 360px'; img.dataset.k = imgKey; img.alt = alt; requestAnimationFrame(() => img.classList.remove('is-swapping')); };
-        if (img.dataset.k && animate && !RM.matches) { img.classList.add('is-swapping'); setTimeout(swap, 260); } else swap();
-      } else img.alt = alt;
-    } else { img.hidden = true; noph.hidden = false; img.dataset.k = ''; }
     // WhatsApp: el mensaje va en rumano, que es lo que lee el local
     const lines = list.map((p) => `${p.ro}${p.g ? ` (${new Intl.NumberFormat('ro-RO').format(p.g)} g)` : ''} – ${new Intl.NumberFormat('ro-RO').format(p.p)} lei`);
     const msg = `Bună! Doresc să plasez o comandă: ${lines.join(' și ')}${list.length > 1 ? `. Total: ${new Intl.NumberFormat('ro-RO').format(total)} lei` : ''}. Suntem ${n} ${n === 1 ? 'persoană' : 'persoane'}.`;
@@ -414,7 +349,8 @@
     // un solo aviso breve para lectores de pantalla cuando cambia la elección
     const ann = $('[data-announce]');
     if (ann && animate) ann.textContent = `${people(n)}: ${list.map((p) => p.ro).join(' + ')}, ${lei(total)}.`;
-    if (plan.started) seatState(animate);
+    // la mesa
+    placeState(); platterState(keys, animate);
     if (animate && plan.started && n === 10 && o === 'oriental10') fireSparklers();
   }
   function setCount(n, opts = {}) {
@@ -429,7 +365,7 @@
     tb.innerHTML = keys.map((k) => { const p = P[k]; return `<tr data-n="${p.n}" data-k="${k}"><td><button type="button">${esc(p.ro)}</button></td><td>${p.n}</td><td>${p.g ? esc(grams(p.g)) : '–'}</td><td>${esc(lei(p.p))}</td></tr>`; }).join('');
   }
   if (tableEl) {
-    buildSeats(); renderAll();
+    buildTable(); renderAll();
     const allD = $('[data-all-details]'); if (allD) allD.open = false; // abierta solo sin JavaScript (no hay mesa interactiva)
     $$('[data-step]').forEach((b) => b.addEventListener('click', () => setCount(plan.n + +b.dataset.step)));
     $('[data-choice]').addEventListener('click', (e) => { const b = e.target.closest('[data-ch]'); if (b) { plan.choice = +b.dataset.ch; renderPlan(true); } });
@@ -439,46 +375,48 @@
       plan.n = 0; setCount(n, { choice: Math.max(0, i) });
       tableEl.scrollIntoView({ behavior: RM.matches ? 'auto' : 'smooth', block: 'center' });
     });
-    const ro = new ResizeObserver(() => sizeBoard()); ro.observe(board);
+    new ResizeObserver(() => sizeTable()).observe(tableEl);
+    renderPlan(false);
     // la mesa se llena la primera vez que se ve: los comensales se sientan uno a uno
     const io = new IntersectionObserver(([en]) => {
       if (!en.isIntersecting || plan.started) return;
       plan.started = true; io.disconnect();
       if (RM.matches) { renderPlan(false); return; }
       const target = plan.n; plan.n = 1; renderPlan(true);
-      let k = 1; const iv = setInterval(() => { k++; plan.n = k; renderPlan(k === target); if (k >= target) clearInterval(iv); }, 380);
+      let k = 1; const iv = setInterval(() => { k++; plan.n = k; renderPlan(k === target); if (k >= target) clearInterval(iv); }, 420);
     }, { threshold: .35 });
-    if (SHOT) { plan.started = true; const qn = +new URLSearchParams(location.search).get('n'); if (qn >= 1 && qn <= 10) plan.n = qn; renderPlan(false); } else io.observe(tableEl);
+    if (SHOT) {
+      plan.started = true; const q = new URLSearchParams(location.search), qn = +q.get('n'), qc = +q.get('c') || 0;
+      if (qn >= 1 && qn <= 10) plan.n = qn; plan.choice = qc;
+      tableEl.classList.add('no-anim'); renderPlan(false);
+      if (q.get('spark') && !RM.matches) { sparkUntil = performance.now() + 60000; loop(); } // ver las bengalas en una captura
+    } else io.observe(tableEl);
   }
 
   /* ---------- carta ---------- */
   const MENU = window.MENU || [];
-  const MIMG = {
-    'plt-grill': ['assets/img/plt-grill-640.webp', 'assets/img/plt-grill-640.webp 640w, assets/img/plt-grill-1080.webp 1080w'],
-    'kitchen': ['assets/img/kitchen-720.webp', 'assets/img/kitchen-720.webp 720w, assets/img/kitchen-1200.webp 1200w'],
-    'ciorbe': ['assets/img/ciorbe-640.webp', 'assets/img/ciorbe-640.webp 640w, assets/img/ciorbe-1000.webp 1000w'],
-    'plt-ciorba': ['assets/img/plt-ciorba-1000.webp', 'assets/img/plt-ciorba-1000.webp 1000w, assets/img/plt-ciorba-1800.webp 1800w'],
-    'plt-melek': ['assets/img/plt-melek-720.webp', 'assets/img/plt-melek-720.webp 720w, assets/img/plt-melek-1100.webp 1100w'],
-    'desert': ['assets/img/desert-720.webp', 'assets/img/desert-720.webp 720w, assets/img/desert-1200.webp 1200w']
-  };
+  // una foto por categoría; las de stock (Unsplash) llevan la nota «imagine de prezentare», la de sosuri es de Melek
+  const mi = (k, big = 1400, stock = true) => ({ src: `assets/img/m-${k}-800.webp`, srcset: `assets/img/m-${k}-800.webp 800w, assets/img/m-${k}-${big}.webp ${big}w`, stock });
+  const MIMG = { gratar: mi('gratar'), gatita: mi('gatita'), ciorbe: mi('ciorbe'), garnituri: mi('garnituri'), salate: mi('salate'), sosuri: mi('sosuri', 1100, false), desert: mi('desert') };
   const MALT = {
-    gratar: { ro: 'Platou cu cârnați, mici, ceafă și cartofi cu brânză rasă', en: 'Platter with sausages, mici, pork neck and potatoes with grated cheese', es: 'Tabla con salchichas, mici, presa y patatas con queso rallado' },
-    gatita: { ro: 'Bucătăria Melek: tăvi cu mâncare gătită', en: 'The Melek kitchen: trays of cooked dishes', es: 'La cocina de Melek: bandejas de platos de cocina' },
-    ciorbe: { ro: 'Boluri de ciorbă cu ardei iute', en: 'Bowls of soup with chillies', es: 'Cuencos de sopa con guindillas' },
-    garnituri: { ro: 'Cartofi cu brânză rasă, murături și sos, lângă un bol de ciorbă', en: 'Potatoes with grated cheese, pickles and sauce next to a bowl of soup', es: 'Patatas con queso rallado, encurtidos y salsa junto a un cuenco de sopa' },
-    salate: { ro: 'Murături, ardei copt și sos pe un platou', en: 'Pickles, roasted peppers and sauce on a platter', es: 'Encurtidos, pimientos asados y salsa en una tabla' },
-    sosuri: { ro: 'Sos de smântână cu usturoi și sos de ardei pe platou', en: 'Garlic sour cream and pepper sauce on a platter', es: 'Salsa de nata agria con ajo y salsa de pimiento en una tabla' },
-    desert: { ro: 'Desert: prăjitură de ciocolată și cremă cu portocală', en: 'Desserts: chocolate cake and a cream with orange', es: 'Postres: pastel de chocolate y crema con naranja' }
+    gratar: { ro: 'Frigărui, cotlete, cartofi copți, vinete și ardei la grătar, cu sosuri', en: 'Skewers, chops, baked potatoes, grilled aubergine and peppers, with sauces', es: 'Brochetas, chuletas, patatas asadas, berenjena y pimiento a la brasa, con salsas' },
+    gatita: { ro: 'Carne înăbușită în sos, pe mămăligă', en: 'Meat braised in sauce, on polenta', es: 'Carne guisada en salsa, sobre polenta' },
+    ciorbe: { ro: 'Ciorbă roșie cu carne de vită, într-un bol de lut', en: 'Red soup with beef in a clay bowl', es: 'Sopa roja con ternera en un cuenco de barro' },
+    garnituri: { ro: 'Cartofi țărănești cu verdeață', en: 'Country-style potatoes with herbs', es: 'Patatas de campo con hierbas' },
+    salate: { ro: 'Salată cu roșii, castraveți, măsline și brânză', en: 'Salad with tomatoes, cucumber, olives and cheese', es: 'Ensalada con tomate, pepino, aceitunas y queso' },
+    sosuri: { ro: 'Sosul de smântână cu usturoi și sosul de ardei, pe platoul Melek', en: 'Garlic sour cream and pepper sauce on a Melek platter', es: 'Salsa de nata agria con ajo y salsa de pimiento en una tabla Melek' },
+    desert: { ro: 'Clătite pe o farfurie cu motive populare', en: 'Pancakes on a plate with folk motifs', es: 'Crepes en un plato con motivos populares' }
   };
   let tabSel = 0;
   function renderMenu() {
     const tabs = $('[data-menu-tabs]'), panel = $('[data-menu-panel]');
     if (!tabs || !MENU.length) return;
     tabs.innerHTML = MENU.map((c, i) => `<button type="button" role="tab" class="tab" id="tab-${c.id}" aria-controls="menu-panel" aria-selected="${i === tabSel}" tabindex="${i === tabSel ? 0 : -1}">${esc(T(c))}</button>`).join('');
-    const c = MENU[tabSel], im = MIMG[c.img] || MIMG['plt-melek'];
+    const c = MENU[tabSel], im = MIMG[c.id] || MIMG.sosuri;
+    const cap = im.stock ? `<figcaption class="stock-note">${esc(T({ ro: 'Imagine de prezentare', en: 'Illustrative photo', es: 'Foto ilustrativa' }))}</figcaption>` : '';
     panel.id = 'menu-panel'; panel.setAttribute('role', 'tabpanel'); panel.setAttribute('aria-labelledby', 'tab-' + c.id);
     const note = L() === 'ro' ? '' : `<span class="tr-note">${esc(T({ en: 'Ingredient list in Romanian, as on the Melek menu.', es: 'Lista de ingredientes en rumano, como en la carta de Melek.' }))}</span>`;
-    panel.innerHTML = `<div class="mp-head"><h3>${esc(T(c))}</h3><figure><img src="${im[0]}" srcset="${im[1]}" sizes="(max-width: 899px) 92vw, 46vw" width="1000" height="563" loading="lazy" decoding="async" alt="${esc(T(MALT[c.id]))}"></figure><p>${esc(c.items.length + ' ' + T({ ro: 'preparate', en: 'dishes', es: 'platos' }))}</p></div>
+    panel.innerHTML = `<div class="mp-head"><h3>${esc(T(c))}</h3><figure><img src="${im.src}" srcset="${im.srcset}" sizes="(max-width: 899px) 92vw, 40vw" width="1400" height="788" loading="lazy" decoding="async" alt="${esc(T(MALT[c.id]))}">${cap}</figure><p>${esc(c.items.length + ' ' + T({ ro: 'preparate', en: 'dishes', es: 'platos' }))}</p></div>
       <div class="items">${c.items.map((it) => `<article class="item"><div class="item-top"><h4 class="item-n">${esc(it.ro)}</h4><span class="item-dots" aria-hidden="true"></span><span class="item-p">${esc(lei(it.p))}</span></div>
         <p class="item-sub">${it.g ? `<span>${esc(grams(it.g))}</span>` : ''}${L() !== 'ro' ? `<span lang="${L()}">${esc(it[L()])}</span>` : ''}</p>
         ${it.d ? `<details class="item-d"><summary>${esc(T({ ro: 'Ingrediente și alergeni', en: 'Ingredients and allergens', es: 'Ingredientes y alérgenos' }))}</summary><p lang="ro">${esc(it.d)}</p>${note}</details>` : ''}</article>`).join('')}</div>`;

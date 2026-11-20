@@ -55,7 +55,8 @@ window.I18N_EN = {
   'mn.h': 'The menu',
   'mn.p': 'Grill, cooked dishes, soups, sides, salads, sauces and desserts. Dish names stay in Romanian; weights, prices, ingredients and allergens are the ones on the Melek menu.',
   'mn.cats': 'Categories',
-  'sp.alt': 'Sarmale (cabbage rolls) with polenta, cabbage and sour cream',
+  'sp.alt': 'Sarmale (cabbage rolls) in tomato sauce, in a baking dish',
+  'ph.stock': 'Illustrative photo',
   'sp.h': 'Special orders',
   'sp.p': 'We cook to order: sarmale, stews, roasts, spit roast, BBQ, grills, salads and soups. We arrange the details by phone.',
   'sp.cta': 'Call: 0744 307 000',
@@ -109,7 +110,7 @@ window.I18N_EN = {
   'ft.cookies': 'Cookie policy (RO)',
   'ft.cookieSet': 'Cookie settings',
   'ft.sal': 'SAL (alternative dispute resolution)',
-  'ft.photos': 'Photos: Melek Coffee Pub and guests on Google Maps',
+  'ft.photos': 'Photos: Melek Coffee Pub, guests on Google Maps and Unsplash (illustrative images)',
   'ab.label': 'Quick actions',
   'ab.route': 'Directions'
 };
@@ -170,7 +171,8 @@ window.I18N_ES = {
   'mn.h': 'La carta',
   'mn.p': 'Parrilla, platos de cocina, sopas, guarniciones, ensaladas, salsas y postres. Los platos conservan su nombre rumano; pesos, precios, ingredientes y alérgenos son los de la carta de Melek.',
   'mn.cats': 'Categorías',
-  'sp.alt': 'Sarmale (rollitos de col) con polenta, col y nata agria',
+  'sp.alt': 'Sarmale (rollitos de col) en salsa de tomate, en una fuente',
+  'ph.stock': 'Foto ilustrativa',
   'sp.h': 'Encargos especiales',
   'sp.p': 'Cocinamos por encargo sarmale, guisos, asados, asado al espetón, barbacoa, parrilladas, ensaladas y sopas. Los detalles se acuerdan por teléfono.',
   'sp.cta': 'Llamar: 0744 307 000',
@@ -224,7 +226,7 @@ window.I18N_ES = {
   'ft.cookies': 'Política de cookies (RO)',
   'ft.cookieSet': 'Configurar cookies',
   'ft.sal': 'SAL (resolución alternativa de litigios)',
-  'ft.photos': 'Fotos: Melek Coffee Pub y clientes en Google Maps',
+  'ft.photos': 'Fotos: Melek Coffee Pub, clientes en Google Maps y Unsplash (imágenes ilustrativas)',
   'ab.label': 'Acciones rápidas',
   'ab.route': 'Ruta'
 };
