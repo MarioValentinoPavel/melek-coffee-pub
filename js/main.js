@@ -101,6 +101,7 @@
     if (!stage || !gable || !h1) return;
     fitH1();
     const s = stage.getBoundingClientRect(), g = gable.getBoundingClientRect(), r = h1.getBoundingClientRect();
+    if (!g.width || !s.width) return; // ventana sin tamaño (pestaña o iframe oculto): se recalcula al redimensionar
     if (h1c) { h1c.style.left = (r.left - g.left) + 'px'; h1c.style.top = (r.top - g.top) + 'px'; h1c.style.width = r.width + 'px'; }
     if (roof) {
       const gw = g.width, gr = gw * roofK();
@@ -114,6 +115,7 @@
     const g = window.gsap;
     if (!g || RM.matches || !gable) return;
     const gw = gable.offsetWidth, gh = gable.offsetHeight, gr = gw * roofK();
+    if (!gw || !gh) return; // sin tamaño no hay entrada: la portada queda en su estado final
     const from = `polygon(0px ${gh}px, ${gw / 2}px ${gh}px, ${gw}px ${gh}px, ${gw}px ${gh}px, 0px ${gh}px)`;
     const to = `polygon(0px ${gr}px, ${gw / 2}px 0px, ${gw}px ${gr}px, ${gw}px ${gh}px, 0px ${gh}px)`;
     const tl = g.timeline({ defaults: { ease: 'power3.out' } });
